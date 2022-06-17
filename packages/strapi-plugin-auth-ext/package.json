@@ -1,0 +1,38 @@
+{
+  "name": "strapi-plugin-auth-ext",
+  "version": "0.0.1",
+  "description": "This is the description of the plugin.",
+  "strapi": {
+    "name": "auth-ext",
+    "icon": "plug",
+    "kind": "plugin",
+    "description": "Description of auth-ext plugin."
+  },
+  "dependencies": {
+  },
+  "peerDependencies": {
+  },
+  "author": {
+    "name": "A Strapi developer",
+    "email": "",
+    "url": ""
+  },
+  "maintainers": [
+    {
+      "name": "A Strapi developer",
+      "email": "",
+      "url": ""
+    }
+  ],
+  "engines": {
+    "node": ">=10.16.0 <=14.x.x",
+    "npm": ">=6.0.0"
+  },
+  "license": "MIT",
+  "files": [
+    "strapi-server.js",
+    "strapi-admin.js",
+    "server",
+    "admin"
+  ]
+}

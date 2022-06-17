@@ -1,0 +1,43 @@
+{
+  "name": "strapi-plugin-phone-auth",
+  "version": "0.0.10",
+  "description": "This is the description of the plugin.",
+  "strapi": {
+    "name": "phone-auth",
+    "icon": "plug",
+    "kind": "plugin",
+    "description": "Plugin for authentication via a phone"
+  },
+  "dependencies": {
+    "strapi-plugin-auth-ext": "0.0.1",
+    "dotenv": "^10.0.0",
+    "find-config": "^1.0.0",
+    "isomorphic-fetch": "3.0.0",
+    "lodash": "4.17.21"
+  },
+  "peerDependencies": {
+    "@wave909/node-sms-ru": "^0.0.8",
+    "twilio": "^3.54.1"
+  },
+  "author": {
+    "name": "A Strapi developer",
+    "email": "",
+    "url": ""
+  },
+  "maintainers": [
+    {
+      "name": "A Strapi developer",
+      "email": "",
+      "url": ""
+    }
+  ],
+  "engines": {
+    "node": ">=10.16.0 <=14.x.x",
+    "npm": ">=6.0.0"
+  },
+  "license": "MIT",
+  "files": [
+    "strapi-server.js",
+    "server"
+  ]
+}

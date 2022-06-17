@@ -1,0 +1,30 @@
+{
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/:id",
+      "handler": "MagicLink.generateMagicLink",
+      "config": {
+        "policies": [],
+        "description": "Request an SMS for the phone authentication",
+        "tag": {
+          "plugin": "users-permissions",
+          "name": "User"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/auth/:magicLink",
+      "handler": "MagicLink.confirmMagicLink",
+      "config": {
+        "policies": [],
+        "description": "Send an SMS code for confirmation",
+        "tag": {
+          "plugin": "users-permissions",
+          "name": "User"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "strapi-plugin-magic-link",
+  "version": "0.0.0",
+  "description": "This is the description of the plugin.",
+  "strapi": {
+    "name": "auth-link",
+    "description": "A plugin to generate and verify auth link for a given user id.",
+    "kind": "plugin"
+  },
+  "dependencies": {
+    "strapi-plugin-auth-ext": "0.0.1",
+    "@buffetjs/core": "^3.3.8",
+    "rand-token": "^1.0.1"
+  },
+  "author": {
+    "name": "A Strapi developer"
+  },
+  "maintainers": [
+    {
+      "name": "A Strapi developer"
+    }
+  ],
+  "engines": {
+    "node": ">=12.x.x <=16.x.x",
+    "npm": ">=6.0.0"
+  },
+  "license": "MIT",
+  "files": [
+    "strapi-server.js",
+    "strapi-admin.js",
+    "server",
+    "config",
+    "admin"
+  ]
+}
