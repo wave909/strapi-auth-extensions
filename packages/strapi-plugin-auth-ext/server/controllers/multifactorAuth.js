@@ -2,8 +2,9 @@ const formatError = (error) => [
   {messages: [{id: error.id, message: error.message, field: error.field}]},
 ]
 const emailRegExp =
-  /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+    /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 const {sanitizeEntity} = {sanitizeEntity: (ent) => ent}
+const bcrypt = require('bcryptjs');
 
 const _ = require('lodash')
 module.exports = ({strapi}) => {
@@ -23,17 +24,17 @@ module.exports = ({strapi}) => {
         id: user.id,
       }),
       user: sanitizeEntity(
-        await strapi.entityService.findOne(
-          'plugin::users-permissions.user',
-          (user.toJSON ? user.toJSON() : user).id,
-          {populate},
-        ),
-        {
-          model: strapi.db.query(
-            'plugin::users-permissions.role',
-            'users-permissions',
-          ).model,
-        },
+          await strapi.entityService.findOne(
+              'plugin::users-permissions.user',
+              (user.toJSON ? user.toJSON() : user).id,
+              {populate},
+          ),
+          {
+            model: strapi.db.query(
+                'plugin::users-permissions.role',
+                'users-permissions',
+            ).model,
+          },
       ),
     }
   }
@@ -42,8 +43,8 @@ module.exports = ({strapi}) => {
     try {
       console.log(await strapi.plugins['auth-ext'].services)
       ;[user, _error] = await strapi.plugins[
-        'auth-ext'
-        ].services.providers.connect(provider, owner, query)
+          'auth-ext'
+          ].services.providers.connect(provider, owner, query)
     } catch ([_user, error]) {
       throw error === 'array' ? error[0] : error
     }
@@ -53,14 +54,14 @@ module.exports = ({strapi}) => {
     let profile
     try {
       profile = await strapi.plugins[owner].services.providers.getProfile(
-        provider,
-        query,
-        (err, profile) => {
-          if (err) {
-            return reject([null, err])
-          }
-          return profile
-        },
+          provider,
+          query,
+          (err, profile) => {
+            if (err) {
+              return reject([null, err])
+            }
+            return profile
+          },
       )
     } catch ([_profile, error]) {
       return ctx.badRequest(null, error === 'array' ? error[0] : error)
@@ -115,7 +116,7 @@ module.exports = ({strapi}) => {
       query.username = params.identifier
     }
     // Check if the user exists.
-    const user = await strapi.query('user', 'users-permissions').findOne(query)
+    const user = await strapi.query('plugin::users-permissions.user').findOne({where:query})
     return user
   }
   const validateUsersAuth = async (user, params, settings) => {
@@ -145,13 +146,11 @@ module.exports = ({strapi}) => {
       throw formatError({
         id: 'Auth.form.error.password.local',
         message:
-          'This user never set a local password, please login with the provider used during account creation.',
+            'This user never set a local password, please login with the provider used during account creation.',
       })
     }
 
-    const validPassword = await strapi.plugins[
-      'users-permissions'
-      ].services.user.validatePassword(params.password, user.password)
+    const validPassword = await strapi.service("plugin::users-permissions.user").validatePassword(params.password, user.password)
 
     if (!validPassword) {
       throw formatError({
@@ -168,8 +167,8 @@ module.exports = ({strapi}) => {
       })
     }
     const verifiedToken = await strapi.plugins[
-      'users-permissions'
-      ].services.jwt.verify(token)
+        'users-permissions'
+        ].services.jwt.verify(token)
     if (!(verifiedToken && verifiedToken.auth_id)) {
       throw formatError({
         id: 'Multifactor.step.token.invalid',
@@ -201,22 +200,22 @@ module.exports = ({strapi}) => {
           name: 'users-permissions',
         })
         const providersSettings =
-          (await strapi
-            .store({
-              environment: '',
-              type: 'plugin',
-              name: 'auth-ext',
-              key: 'providers',
-            })
-            .get()) || {}
+            (await strapi
+                .store({
+                  environment: '',
+                  type: 'plugin',
+                  name: 'auth-ext',
+                  key: 'providers',
+                })
+                .get()) || {}
         let user
         await verifyProvider(providersSettings[owner] || {}, provider)
         if (provider === 'local') {
           user = await getLocalUser(params)
           await validateUsersAuth(
-            user,
-            params,
-            await store.get({key: 'advanced'}),
+              user,
+              params,
+              await store.get({key: 'advanced'}),
           )
         } else {
           // Connect the user with the third-party provider.
@@ -259,35 +258,65 @@ module.exports = ({strapi}) => {
           name: 'phone-auth',
         })
         const providersSettings =
-          (await strapi
-            .store({
-              environment: '',
-              type: 'plugin',
-              name: 'auth-ext',
-              key: 'second-providers',
-            })
-            .get()) || {}
+            (await strapi
+                .store({
+                  environment: '',
+                  type: 'plugin',
+                  name: 'auth-ext',
+                  key: 'providers-second',
+                })
+                .get()) || {}
+        console.log({providersSettings})
         await verifyProvider(providersSettings[owner] || {}, provider)
         const userId = await verifyFirstStepTokenAndGetUserId(token)
-        let user
-        if (provider === 'local') {
+        let user =  await strapi.query("plugin::users-permissions.user").findOne({where:{id: userId}})
+        if(!user.second_provider) {
+          if (provider === 'local'||(owner==="auth-ext"&&provider==="email")) {
+            await validateLocalAuthInputs(params)
+            const isEmail = emailRegExp.test(params.identifier)
+            const data = {
+              second_provider: provider,
+              password:params.password,
+
+            }
+            if (isEmail) {
+              data.second_email = params.identifier.toLowerCase()
+            } else {
+              data.second_username = params.identifier
+            }
+
+            user = await strapi.service("plugin::users-permissions.user").edit(userId,data)
+
+          }else{
+            const profile = await getProvidersProfile(provider, owner, {
+              ...ctx.query,
+              _second_step: true,
+            })
+            const data = {
+              second_provider: provider,
+              second_email: profile.email,
+              second_username: profile.username,
+            }
+            user = await strapi.service("plugin::users-permissions.user").edit(userId,{data})
+          }
+        }
+        if (provider === 'local'||(owner==="auth-ext"&&provider==="email")) {
           await validateLocalAuthInputs(params)
           const isEmail = emailRegExp.test(params.identifier)
           const query = {
-            second_provider: 'local',
+            second_provider: provider,
             id: userId,
-            password: params.password,
           }
           if (isEmail) {
             query.second_email = params.identifier.toLowerCase()
           } else {
             query.second_username = params.identifier
           }
-          user = await strapi.query('user', 'users-permissions').findOne(query)
+          user = await strapi.query("plugin::users-permissions.user").findOne({where:query})
           await validateUsersAuth(
-            user,
-            params,
-            await store.get({key: 'advanced'}),
+              user,
+              params,
+              await store.get({key: 'advanced'}),
           )
         } else {
           const profile = await getProvidersProfile(provider, owner, {
@@ -300,19 +329,20 @@ module.exports = ({strapi}) => {
             second_email: profile.email,
             second_username: profile.username,
           }
-          user = await strapi.query('user', 'users-permissions').findOne(query)
+          user = await strapi.query("plugin::users-permissions.user").findOne({where:query})
           if (!user) {
             return ctx.badRequest(
-              null,
-              formatError({
-                id: 'Invalid.provider',
-                message: 'Invalid auth data',
-              }),
+                null,
+                formatError({
+                  id: 'Invalid.provider',
+                  message: 'Invalid auth data',
+                }),
             )
           }
         }
         return formatSecondStepResponse(user)
       } catch (e) {
+        console.log(e[0].messages)
         return ctx.badRequest(null, e.message)
       }
     },
@@ -338,14 +368,16 @@ module.exports = ({strapi}) => {
           second_username: profile.username,
         }
       }
-      const user = await strapi.plugins['users-permissions'].services.user.edit(
-        {id: userId},
-        updateData,
+      const user = await strapi.query("plugin::users-permissions.user").update(
+          {
+            where: {id: userId},
+            data: updateData
+          },
       )
       if (!user) {
         return ctx.badRequest(
-          null,
-          formatError({id: 'Token.invalid', message: 'User doesn`t exist'}),
+            null,
+            formatError({id: 'Token.invalid', message: 'User doesn`t exist'}),
         )
       }
       return await formatSecondStepResponse(newUser)

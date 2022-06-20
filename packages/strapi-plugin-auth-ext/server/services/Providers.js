@@ -44,26 +44,26 @@ module.exports = ({strapi}) => {
 
         try {
           // console.log(strapi.plugins['users-permissions'].services.user.fetch)
-          const users = await strapi.plugins[
-            'users-permissions'
-            ].services.user.fetchAll({
-            email: profile.email,
+          const users = await strapi.query("plugin::users-permissions.user").findMany({
+            where: {
+              email: profile.email,
+            }
           })
 
           const advanced = await strapi
-            .store({
-              environment: '',
-              type: 'plugin',
-              name: 'users-permissions',
-              key: 'advanced',
-            })
-            .get()
+              .store({
+                environment: '',
+                type: 'plugin',
+                name: 'users-permissions',
+                key: 'advanced',
+              })
+              .get()
 
           const user = _.find(users, {provider})
 
           if (
-            _.isEmpty(user) &&
-            (!advanced.allow_register || !query.allow_register)
+              _.isEmpty(user) &&
+              (!advanced.allow_register || !query.allow_register)
           ) {
             return resolve([
               null,
@@ -77,8 +77,8 @@ module.exports = ({strapi}) => {
           }
 
           if (
-            !_.isEmpty(_.find(users, (user) => user.provider !== provider)) &&
-            advanced.unique_email
+              !_.isEmpty(_.find(users, (user) => user.provider !== provider)) &&
+              advanced.unique_email
           ) {
             return resolve([
               null,
@@ -89,8 +89,8 @@ module.exports = ({strapi}) => {
 
           // Retrieve default role.
           const defaultRole = await strapi.db
-            .query('plugin::users-permissions.role', 'users-permissions')
-            .findOne({type: advanced.default_role})
+              .query('plugin::users-permissions.role', 'users-permissions')
+              .findOne({type: advanced.default_role})
 
           // Create the new user.
           const params = _.assign(profile, {
@@ -100,8 +100,8 @@ module.exports = ({strapi}) => {
           })
 
           const createdUser = await strapi.db
-            .query('plugin::users-permissions.user', 'users-permissions')
-            .create({data: params})
+              .query('plugin::users-permissions.user', 'users-permissions')
+              .create({data: params})
 
           return resolve([createdUser, null])
         } catch (err) {
@@ -115,9 +115,9 @@ module.exports = ({strapi}) => {
       } else {
         try {
           strapi.plugins[ownerPlugin].services.providers.getProfile(
-            provider,
-            query,
-            callback,
+              provider,
+              query,
+              callback,
           )
         } catch (e) {
           callback(e, null)
@@ -137,13 +137,13 @@ module.exports = ({strapi}) => {
     const access_token = query.access_token || query.code || query.oauth_token
 
     const grant = await strapi
-      .store({
-        environment: '',
-        type: 'plugin',
-        name: 'users-permissions',
-        key: 'grant',
-      })
-      .get()
+        .store({
+          environment: '',
+          type: 'plugin',
+          name: 'users-permissions',
+          key: 'grant',
+        })
+        .get()
 
     switch (provider) {
       case 'discord': {
@@ -167,21 +167,21 @@ module.exports = ({strapi}) => {
           },
         })
         discord
-          .query()
-          .get('users/@me')
-          .auth(access_token)
-          .request((err, res, body) => {
-            if (err) {
-              callback(err)
-            } else {
-              // Combine username and discriminator because discord username is not unique
-              var username = `${body.username}#${body.discriminator}`
-              callback(null, {
-                username: username,
-                email: body.email,
-              })
-            }
-          })
+            .query()
+            .get('users/@me')
+            .auth(access_token)
+            .request((err, res, body) => {
+              if (err) {
+                callback(err)
+              } else {
+                // Combine username and discriminator because discord username is not unique
+                var username = `${body.username}#${body.discriminator}`
+                callback(null, {
+                  username: username,
+                  email: body.email,
+                })
+              }
+            })
         break
       }
       case 'cognito': {
@@ -206,38 +206,38 @@ module.exports = ({strapi}) => {
         })
 
         facebook
-          .query()
-          .get('me?fields=name,email')
-          .auth(access_token)
-          .request((err, res, body) => {
-            if (err) {
-              callback(err)
-            } else {
-              callback(null, {
-                username: body.name,
-                email: body.email,
-              })
-            }
-          })
+            .query()
+            .get('me?fields=name,email')
+            .auth(access_token)
+            .request((err, res, body) => {
+              if (err) {
+                callback(err)
+              } else {
+                callback(null, {
+                  username: body.name,
+                  email: body.email,
+                })
+              }
+            })
         break
       }
       case 'google': {
         const google = purest({provider: 'google', config: purestConfig})
 
         google
-          .query('oauth')
-          .get('tokeninfo')
-          .qs({access_token})
-          .request((err, res, body) => {
-            if (err) {
-              callback(err)
-            } else {
-              callback(null, {
-                username: body.email.split('@')[0],
-                email: body.email,
-              })
-            }
-          })
+            .query('oauth')
+            .get('tokeninfo')
+            .qs({access_token})
+            .request((err, res, body) => {
+              if (err) {
+                callback(err)
+              } else {
+                callback(null, {
+                  username: body.email.split('@')[0],
+                  email: body.email,
+                })
+              }
+            })
         break
       }
       case 'github': {
@@ -252,40 +252,40 @@ module.exports = ({strapi}) => {
         })
 
         github
-          .query()
-          .get('user')
-          .auth(access_token)
-          .request((err, res, userbody) => {
-            if (err) {
-              return callback(err)
-            }
+            .query()
+            .get('user')
+            .auth(access_token)
+            .request((err, res, userbody) => {
+              if (err) {
+                return callback(err)
+              }
 
-            // This is the public email on the github profile
-            if (userbody.email) {
-              return callback(null, {
-                username: userbody.login,
-                email: userbody.email,
-              })
-            }
-
-            // Get the email with Github's user/emails API
-            github
-              .query()
-              .get('user/emails')
-              .auth(access_token)
-              .request((err, res, emailsbody) => {
-                if (err) {
-                  return callback(err)
-                }
-
+              // This is the public email on the github profile
+              if (userbody.email) {
                 return callback(null, {
                   username: userbody.login,
-                  email: Array.isArray(emailsbody)
-                    ? emailsbody.find((email) => email.primary === true).email
-                    : null,
+                  email: userbody.email,
                 })
-              })
-          })
+              }
+
+              // Get the email with Github's user/emails API
+              github
+                  .query()
+                  .get('user/emails')
+                  .auth(access_token)
+                  .request((err, res, emailsbody) => {
+                    if (err) {
+                      return callback(err)
+                    }
+
+                    return callback(null, {
+                      username: userbody.login,
+                      email: Array.isArray(emailsbody)
+                          ? emailsbody.find((email) => email.primary === true).email
+                          : null,
+                    })
+                  })
+            })
         break
       }
       case 'microsoft': {
@@ -295,19 +295,19 @@ module.exports = ({strapi}) => {
         })
 
         microsoft
-          .query()
-          .get('me')
-          .auth(access_token)
-          .request((err, res, body) => {
-            if (err) {
-              callback(err)
-            } else {
-              callback(null, {
-                username: body.userPrincipalName,
-                email: body.userPrincipalName,
-              })
-            }
-          })
+            .query()
+            .get('me')
+            .auth(access_token)
+            .request((err, res, body) => {
+              if (err) {
+                callback(err)
+              } else {
+                callback(null, {
+                  username: body.userPrincipalName,
+                  email: body.userPrincipalName,
+                })
+              }
+            })
         break
       }
       case 'twitter': {
@@ -319,20 +319,20 @@ module.exports = ({strapi}) => {
         })
 
         twitter
-          .query()
-          .get('account/verify_credentials')
-          .auth(access_token, query.access_secret)
-          .qs({screen_name: query['raw[screen_name]'], include_email: 'true'})
-          .request((err, res, body) => {
-            if (err) {
-              callback(err)
-            } else {
-              callback(null, {
-                username: body.screen_name,
-                email: body.email,
-              })
-            }
-          })
+            .query()
+            .get('account/verify_credentials')
+            .auth(access_token, query.access_secret)
+            .qs({screen_name: query['raw[screen_name]'], include_email: 'true'})
+            .request((err, res, body) => {
+              if (err) {
+                callback(err)
+              } else {
+                callback(null, {
+                  username: body.screen_name,
+                  email: body.email,
+                })
+              }
+            })
         break
       }
       case 'instagram': {
@@ -344,19 +344,19 @@ module.exports = ({strapi}) => {
         })
 
         instagram
-          .query()
-          .get('me')
-          .qs({access_token, fields: 'id,username'})
-          .request((err, res, body) => {
-            if (err) {
-              callback(err)
-            } else {
-              callback(null, {
-                username: body.username,
-                email: `${body.username}@strapi.io`, // dummy email as Instagram does not provide user email
-              })
-            }
-          })
+            .query()
+            .get('me')
+            .qs({access_token, fields: 'id,username'})
+            .request((err, res, body) => {
+              if (err) {
+                callback(err)
+              } else {
+                callback(null, {
+                  username: body.username,
+                  email: `${body.username}@strapi.io`, // dummy email as Instagram does not provide user email
+                })
+              }
+            })
         break
       }
       case 'vk': {
@@ -366,18 +366,18 @@ module.exports = ({strapi}) => {
         })
 
         vk.query()
-          .get('users.get')
-          .qs({access_token, id: query.raw.user_id, v: '5.122'})
-          .request((err, res, body) => {
-            if (err) {
-              callback(err)
-            } else {
-              callback(null, {
-                username: `${body.response[0].last_name} ${body.response[0].first_name}`,
-                email: query.raw.email,
-              })
-            }
-          })
+            .get('users.get')
+            .qs({access_token, id: query.raw.user_id, v: '5.122'})
+            .request((err, res, body) => {
+              if (err) {
+                callback(err)
+              } else {
+                callback(null, {
+                  username: `${body.response[0].last_name} ${body.response[0].first_name}`,
+                  email: query.raw.email,
+                })
+              }
+            })
         break
       }
       case 'twitch': {
@@ -410,18 +410,18 @@ module.exports = ({strapi}) => {
         })
 
         twitch
-          .get('users')
-          .auth(access_token, grant.twitch.key)
-          .request((err, res, body) => {
-            if (err) {
-              callback(err)
-            } else {
-              callback(null, {
-                username: body.data[0].login,
-                email: body.data[0].email,
-              })
-            }
-          })
+            .get('users')
+            .auth(access_token, grant.twitch.key)
+            .request((err, res, body) => {
+              if (err) {
+                callback(err)
+              } else {
+                callback(null, {
+                  username: body.data[0].login,
+                  email: body.data[0].email,
+                })
+              }
+            })
         break
       }
       case 'linkedin': {
@@ -447,30 +447,30 @@ module.exports = ({strapi}) => {
           const getDetailsRequest = () => {
             return new Promise((resolve, reject) => {
               linkedIn
-                .query()
-                .get('me')
-                .auth(access_token)
-                .request((err, res, body) => {
-                  if (err) {
-                    return reject(err)
-                  }
-                  resolve(body)
-                })
+                  .query()
+                  .get('me')
+                  .auth(access_token)
+                  .request((err, res, body) => {
+                    if (err) {
+                      return reject(err)
+                    }
+                    resolve(body)
+                  })
             })
           }
 
           const getEmailRequest = () => {
             return new Promise((resolve, reject) => {
               linkedIn
-                .query()
-                .get('emailAddress?q=members&projection=(elements*(handle~))')
-                .auth(access_token)
-                .request((err, res, body) => {
-                  if (err) {
-                    return reject(err)
-                  }
-                  resolve(body)
-                })
+                  .query()
+                  .get('emailAddress?q=members&projection=(elements*(handle~))')
+                  .auth(access_token)
+                  .request((err, res, body) => {
+                    if (err) {
+                      return reject(err)
+                    }
+                    resolve(body)
+                  })
             })
           }
 
@@ -499,19 +499,19 @@ module.exports = ({strapi}) => {
         })
 
         reddit
-          .query('auth')
-          .get('me')
-          .auth(access_token)
-          .request((err, res, body) => {
-            if (err) {
-              callback(err)
-            } else {
-              callback(null, {
-                username: body.name,
-                email: `${body.name}@strapi.io`, // dummy email as Reddit does not provide user email
-              })
-            }
-          })
+            .query('auth')
+            .get('me')
+            .auth(access_token)
+            .request((err, res, body) => {
+              if (err) {
+                callback(err)
+              } else {
+                callback(null, {
+                  username: body.name,
+                  email: `${body.name}@strapi.io`, // dummy email as Reddit does not provide user email
+                })
+              }
+            })
         break
       }
       case 'auth0': {
@@ -536,26 +536,26 @@ module.exports = ({strapi}) => {
         })
 
         auth0
-          .get('userinfo')
-          .auth(access_token)
-          .request((err, res, body) => {
-            if (err) {
-              callback(err)
-            } else {
-              const username =
-                body.username ||
-                body.nickname ||
-                body.name ||
-                body.email.split('@')[0]
-              const email =
-                body.email || `${username.replace(/\s+/g, '.')}@strapi.io`
+            .get('userinfo')
+            .auth(access_token)
+            .request((err, res, body) => {
+              if (err) {
+                callback(err)
+              } else {
+                const username =
+                    body.username ||
+                    body.nickname ||
+                    body.name ||
+                    body.email.split('@')[0]
+                const email =
+                    body.email || `${username.replace(/\s+/g, '.')}@strapi.io`
 
-              callback(null, {
-                username,
-                email,
-              })
-            }
-          })
+                callback(null, {
+                  username,
+                  email,
+                })
+              }
+            })
         break
       }
       default:
@@ -565,7 +565,7 @@ module.exports = ({strapi}) => {
   }
 
   const buildRedirectUri = (provider = '') =>
-    `${getAbsoluteServerUrl(strapi.config)}/connect/${provider}/callback`
+      `${getAbsoluteServerUrl(strapi.config)}/connect/${provider}/callback`
 
   return {
     connect,
