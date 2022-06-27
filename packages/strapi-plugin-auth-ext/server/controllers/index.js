@@ -1,10 +1,6 @@
-const Auth = require("./Auth")
-const multifactorAuth = require("./multifactorAuth")
-const Providers = require("./Providers")
-const User = require("./User")
+const authExt = require("./auth-ext");
+const providers = require("./providers");
 module.exports = {
-  Auth,
-  multifactorAuth,
-  Providers,
-  User
-}
+  providers,
+  authExt,
+};

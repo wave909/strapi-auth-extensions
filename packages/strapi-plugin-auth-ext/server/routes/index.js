@@ -2,116 +2,89 @@ module.exports = {
   admin: {
     routes: [
       {
-        "method": "PUT",
-        "path": "/providers/:ownerPlugin",
-        "handler": "Providers.updateProviders",
-        "config": {
-          "policies": [],
-          "description": "Request an SMS for the phone authentication",
-          "tag": {
-            "plugin": "phone-auth",
-            "name": "User"
-          }
-        }
+        method: "PUT",
+        path: "/providers/:step",
+        handler: "providers.updateProviders",
+        config: {
+          policies: [],
+          description: "Request an SMS for the phone authentication",
+          tag: {
+            plugin: "phone-auth",
+            name: "User",
+          },
+        },
       },
       {
-        "method": "GET",
-        "path": "/providers/:ownerPlugin",
-        "handler": "Providers.getProviders",
-        "config": {
-          "policies": [],
-          "description": "Request an SMS for the phone authentication",
-          "tag": {
-            "plugin": "phone-auth",
-            "name": "User"
-          }
-        }
+        method: "GET",
+        path: "/providers-steps",
+        handler: "providers.getProvidersSteps",
+        config: {
+          policies: [],
+          description: "Request an SMS for the phone authentication",
+          tag: {
+            plugin: "phone-auth",
+            name: "User",
+          },
+        },
       },
       {
-        "method": "GET",
-        "path": "/providers-owners",
-        "handler": "Providers.getProvidersOwners",
-        "config": {
-          "policies": [],
-          "description": "Request an SMS for the phone authentication",
-          "tag": {
-            "plugin": "phone-auth",
-            "name": "User"
-          }
-        }
+        method: "GET",
+        path: "/providers/:step",
+        handler: "providers.getProviders",
+        config: {
+          policies: [],
+          description: "Request an SMS for the phone authentication",
+          tag: {
+            plugin: "phone-auth",
+            name: "User",
+          },
+        },
       },
       {
-        "method": "PUT",
-        "path": "/second-step-providers/:ownerPlugin",
-        "handler": "Providers.updateSecondProviders",
-        "config": {
-          "policies": [],
-          "description": "Request an SMS for the phone authentication",
-          "tag": {
-            "plugin": "phone-auth",
-            "name": "User"
-          }
-        }
+        method: "POST",
+        path: "/add-providers-step",
+        handler: "providers.addAuthStep",
+        config: {
+          policies: [],
+          description: "Request an SMS for the phone authentication",
+          tag: {
+            plugin: "phone-auth",
+            name: "User",
+          },
+        },
       },
       {
-        "method": "GET",
-        "path": "/second-step-providers/:ownerPlugin",
-        "handler": "Providers.getSecondProviders",
-        "config": {
-          "policies": [],
-          "description": "Request an SMS for the phone authentication",
-          "tag": {
-            "plugin": "phone-auth",
-            "name": "User"
-          }
-        }
-      },
-      {
-        "method": "POST",
-        "path": "/auth/prepare-user-model",
-        "handler": "User.addSecondFactorFieldsToUserModel",
-        "config": {
-          "policies": [],
-          "description": "Request an SMS for the phone authentication",
-          "tag": {
-            "plugin": "auth-ext",
-            "name": "User"
-          }
-        }
+        method: "POST",
+        path: "/remove-providers-step",
+        handler: "providers.removeAuthStep",
+        config: {
+          policies: [],
+          description: "Request an SMS for the phone authentication",
+          tag: {
+            plugin: "phone-auth",
+            name: "User",
+          },
+        },
       },
     ],
-    type: "admin"
+    type: "admin",
   },
   "content-api": {
     routes: [
       {
-        "method": "POST",
-        "path": "/auth/:pluginOwner/:provider/first-step",
-        "handler": "multifactorAuth.firstStepCallback",
-        "config": {
-          "policies": [],
-          "description": "Request an SMS for the phone authentication",
-          "tag": {
-            "plugin": "auth-ext",
-            "name": "User"
-          }
-        }
+        method: "POST",
+        path: "/auth/:provider/auth-step/:step",
+        handler: "authExt.authStep",
+        config: {
+          policies: [],
+          description: "Request an SMS for the phone authentication",
+          tag: {
+            plugin: "auth-ext",
+            name: "User",
+          },
+        },
       },
-      {
-        "method": "POST",
-        "path": "/auth/:pluginOwner/:provider/second-step",
-        "handler": "multifactorAuth.secondStepCallback",
-        "config": {
-          "policies": [],
-          "description": "Request an SMS for the phone authentication",
-          "tag": {
-            "plugin": "auth-ext",
-            "name": "User"
-          }
-        }
-      }
     ],
-    type: "content-api"
-  }
-}
-
+    type: "content-api",
+  },
+};

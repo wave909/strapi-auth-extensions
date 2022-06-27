@@ -1,5 +1,5 @@
-import React, {useMemo, useRef, useState} from 'react';
-import {useIntl} from 'react-intl';
+import React, { useMemo, useRef, useState, useEffect } from "react";
+import { useIntl } from "react-intl";
 import {
   SettingsPageTitle,
   LoadingIndicatorPage,
@@ -11,84 +11,93 @@ import {
   useFocusWhenNavigate,
   onRowClick,
   stopPropagation,
-} from '@strapi/helper-plugin';
-import has from 'lodash/has';
-import upperFirst from 'lodash/upperFirst';
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
-import {HeaderLayout, Layout, ContentLayout} from '@strapi/design-system/Layout';
-import {Main} from '@strapi/design-system/Main';
-import {useNotifyAT} from '@strapi/design-system/LiveRegions';
-import {Table, Thead, Tr, Th, Tbody, Td} from '@strapi/design-system/Table';
-import {Typography} from '@strapi/design-system/Typography';
-import {VisuallyHidden} from '@strapi/design-system/VisuallyHidden';
-import {IconButton} from '@strapi/design-system/IconButton';
-import Pencil from '@strapi/icons/Pencil';
-import {useQuery, useMutation, useQueryClient} from 'react-query';
-import forms from './utils/forms';
-import {fetchData, putProvider} from './utils/api';
-import createProvidersArray from './utils/createProvidersArray';
-import {getTrad} from '../../utils';
-import pluginPermissions from '../../permissions';
-import FormModal from '@strapi/plugin-users-permissions/admin/src/components/FormModal';
+} from "@strapi/helper-plugin";
+import has from "lodash/has";
+import upperFirst from "lodash/upperFirst";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  HeaderLayout,
+  Layout,
+  ContentLayout,
+} from "@strapi/design-system/Layout";
+import { Main } from "@strapi/design-system/Main";
+import { useNotifyAT } from "@strapi/design-system/LiveRegions";
+import { Table, Thead, Tr, Th, Tbody, Td } from "@strapi/design-system/Table";
+import { Typography } from "@strapi/design-system/Typography";
+import { VisuallyHidden } from "@strapi/design-system/VisuallyHidden";
+import { IconButton } from "@strapi/design-system/IconButton";
+import Pencil from "@strapi/icons/Pencil";
+import { useQuery, useMutation, useQueryClient } from "react-query";
+import forms from "./utils/forms";
+import { fetchData, putProvider } from "./utils/api";
+import createProvidersArray from "./utils/createProvidersArray";
+import { getTrad } from "../../utils";
+import pluginPermissions from "../../permissions";
+import FormModal from "@strapi/plugin-users-permissions/admin/src/components/FormModal";
 
-export const ProvidersPage = ({pluginName = "", secondStep = false}) => {
-  const {formatMessage} = useIntl();
+export const ProvidersPage = ({ step = 0 }) => {
+  const { formatMessage } = useIntl();
   useFocusWhenNavigate();
-  const {notifyStatus} = useNotifyAT();
+  const { notifyStatus } = useNotifyAT();
   const queryClient = useQueryClient();
-  const {trackUsage} = useTracking();
+  const { trackUsage } = useTracking();
   const trackUsageRef = useRef(trackUsage);
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmiting, setIsSubmiting] = useState(false);
   const [providerToEditName, setProviderToEditName] = useState(null);
   const toggleNotification = useNotification();
-  const {lockApp, unlockApp} = useOverlayBlocker();
+  const { lockApp, unlockApp } = useOverlayBlocker();
+  console.log({ step });
 
   const updatePermissions = useMemo(() => {
-    return {update: pluginPermissions.updateProviders};
+    return { update: pluginPermissions.updateProviders };
   }, []);
 
   const {
     isLoading: isLoadingForPermissions,
     allowedActions: {},
   } = useRBAC(updatePermissions);
-  const canUpdate = true
+  const canUpdate = true;
 
-  const {isLoading: isLoadingForData, data: modifiedData, isFetching} = useQuery(
-    `get-providers-${pluginName}`,
-    () => fetchData(pluginName, secondStep)(toggleNotification,),
-    {
-      onSuccess: () => {
-        notifyStatus(
-          formatMessage({
-            id: getTrad('Providers.data.loaded'),
-            defaultMessage: 'Providers have been loaded',
-          })
-        );
-      },
-      initialData: {},
-    }
-  );
+  const {
+    isLoading: isLoadingForData,
+    data: modifiedData,
+    isFetching,
+    refetch,
+  } = useQuery(`get-providers`, () => fetchData(step)(toggleNotification), {
+    onSuccess: () => {
+      notifyStatus(
+        formatMessage({
+          id: getTrad("Providers.data.loaded"),
+          defaultMessage: "Providers have been loaded",
+        })
+      );
+    },
+    initialData: {},
+  });
+  useEffect(() => {
+    refetch();
+  }, [step]);
 
   const isLoading = isLoadingForData || isFetching;
 
-  const submitMutation = useMutation(putProvider(pluginName, secondStep), {
+  const submitMutation = useMutation(putProvider(step), {
     onSuccess: async () => {
-      await queryClient.invalidateQueries(`get-providers-${pluginName}`,);
+      await queryClient.invalidateQueries(`get-providers`);
       toggleNotification({
-        type: 'info',
-        message: {id: getTrad('notification.success.submit')},
+        type: "info",
+        message: { id: getTrad("notification.success.submit") },
       });
 
-      trackUsageRef.current('didEditAuthenticationProvider');
+      trackUsageRef.current("didEditAuthenticationProvider");
       setIsSubmiting(false);
       handleToggleModal();
       unlockApp();
     },
     onError: () => {
       toggleNotification({
-        type: 'warning',
-        message: {id: 'notification.error'},
+        type: "warning",
+        message: { id: "notification.error" },
       });
       unlockApp();
       setIsSubmiting(false);
@@ -96,7 +105,11 @@ export const ProvidersPage = ({pluginName = "", secondStep = false}) => {
     refetchActive: false,
   });
 
-  const providers = useMemo(() => createProvidersArray(modifiedData), [modifiedData]);
+  const providers = useMemo(
+    () => createProvidersArray(modifiedData || {}),
+    [modifiedData]
+  );
+  console.log(providers);
 
   const rowCount = providers.length;
 
@@ -105,18 +118,20 @@ export const ProvidersPage = ({pluginName = "", secondStep = false}) => {
       return false;
     }
 
-    const providerToEdit = providers.find(obj => obj.name === providerToEditName);
+    const providerToEdit = providers.find(
+      (obj) => obj.name === providerToEditName
+    );
 
-    return has(providerToEdit, 'subdomain');
+    return has(providerToEdit, "subdomain");
   }, [providers, providerToEditName]);
 
   const pageTitle = formatMessage({
-    id: getTrad('HeaderNav.link.providers'),
-    defaultMessage: 'Providers',
+    id: getTrad("HeaderNav.link.providers"),
+    defaultMessage: "Providers",
   });
 
   const layoutToRender = useMemo(() => {
-    if (providerToEditName === 'email') {
+    if (providerToEditName === "email") {
       return forms.email;
     }
 
@@ -128,40 +143,40 @@ export const ProvidersPage = ({pluginName = "", secondStep = false}) => {
   }, [providerToEditName, isProviderWithSubdomain]);
 
   const handleToggleModal = () => {
-    setIsOpen(prev => !prev);
+    setIsOpen((prev) => !prev);
   };
 
-  const handleClickEdit = provider => {
+  const handleClickEdit = (provider) => {
     if (canUpdate) {
       setProviderToEditName(provider.name);
       handleToggleModal();
     }
   };
 
-  const handleSubmit = async values => {
+  const handleSubmit = async (values) => {
     setIsSubmiting(true);
 
     lockApp();
 
-    trackUsageRef.current('willEditAuthenticationProvider');
+    trackUsageRef.current("willEditAuthenticationProvider");
 
-    const body = {...modifiedData, [providerToEditName]: values};
+    const body = { ...modifiedData, [providerToEditName]: values };
 
-    submitMutation.mutate({providers: body});
+    submitMutation.mutate({ providers: body });
   };
 
   return (
     <Layout>
-      <SettingsPageTitle name={pageTitle}/>
+      <SettingsPageTitle name={pageTitle} />
       <Main>
         <HeaderLayout
           title={formatMessage({
-            id: getTrad('HeaderNav.link.providers'),
-            defaultMessage: 'Providers',
+            id: getTrad("HeaderNav.link.providers"),
+            defaultMessage: "Providers",
           })}
         />
         {isLoading || isLoadingForPermissions ? (
-          <LoadingIndicatorPage/>
+          <LoadingIndicatorPage />
         ) : (
           <ContentLayout>
             <Table colCount={4} rowCount={rowCount + 1}>
@@ -171,28 +186,34 @@ export const ProvidersPage = ({pluginName = "", secondStep = false}) => {
                     <Typography variant="sigma" textColor="neutral600">
                       <VisuallyHidden>
                         {formatMessage({
-                          id: getTrad('Providers.image'),
-                          defaultMessage: 'Image'
+                          id: getTrad("Providers.image"),
+                          defaultMessage: "Image",
                         })}
                       </VisuallyHidden>
                     </Typography>
                   </Th>
                   <Th>
                     <Typography variant="sigma" textColor="neutral600">
-                      {formatMessage({id: getTrad('Providers.name'), defaultMessage: 'Name'})}
+                      {formatMessage({
+                        id: getTrad("Providers.name"),
+                        defaultMessage: "Name",
+                      })}
                     </Typography>
                   </Th>
                   <Th>
                     <Typography variant="sigma" textColor="neutral600">
-                      {formatMessage({id: getTrad('Providers.status'), defaultMessage: 'Status'})}
+                      {formatMessage({
+                        id: getTrad("Providers.status"),
+                        defaultMessage: "Status",
+                      })}
                     </Typography>
                   </Th>
                   <Th>
                     <Typography variant="sigma">
                       <VisuallyHidden>
                         {formatMessage({
-                          id: getTrad('Providers.settings'),
-                          defaultMessage: 'Settings',
+                          id: getTrad("Providers.settings"),
+                          defaultMessage: "Settings",
                         })}
                       </VisuallyHidden>
                     </Typography>
@@ -200,7 +221,7 @@ export const ProvidersPage = ({pluginName = "", secondStep = false}) => {
                 </Tr>
               </Thead>
               <Tbody>
-                {providers.map(provider => (
+                {providers.map((provider) => (
                   <Tr
                     key={provider.name}
                     {...onRowClick({
@@ -209,7 +230,7 @@ export const ProvidersPage = ({pluginName = "", secondStep = false}) => {
                     })}
                   >
                     <Td width="">
-                      <FontAwesomeIcon icon={provider.icon}/>
+                      <FontAwesomeIcon icon={provider.icon} />
                     </Td>
                     <Td width="45%">
                       <Typography fontWeight="semiBold" textColor="neutral800">
@@ -218,18 +239,20 @@ export const ProvidersPage = ({pluginName = "", secondStep = false}) => {
                     </Td>
                     <Td width="65%">
                       <Typography
-                        textColor={provider.enabled ? 'success600' : 'danger600'}
+                        textColor={
+                          provider.enabled ? "success600" : "danger600"
+                        }
                         data-testid={`enable-${provider.name}`}
                       >
                         {provider.enabled
                           ? formatMessage({
-                            id: getTrad('Providers.enabled'),
-                            defaultMessage: 'Enabled',
-                          })
+                              id: getTrad("Providers.enabled"),
+                              defaultMessage: "Enabled",
+                            })
                           : formatMessage({
-                            id: getTrad('Providers.disabled'),
-                            defaultMessage: 'Disabled',
-                          })}
+                              id: getTrad("Providers.disabled"),
+                              defaultMessage: "Disabled",
+                            })}
                       </Typography>
                     </Td>
                     <Td {...stopPropagation}>
@@ -237,7 +260,7 @@ export const ProvidersPage = ({pluginName = "", secondStep = false}) => {
                         <IconButton
                           onClick={() => handleClickEdit(provider)}
                           noBorder
-                          icon={<Pencil/>}
+                          icon={<Pencil />}
                           label="Edit"
                         />
                       )}
@@ -256,8 +279,8 @@ export const ProvidersPage = ({pluginName = "", secondStep = false}) => {
         layout={layoutToRender}
         headerBreadcrumbs={[
           formatMessage({
-            id: getTrad('PopUpForm.header.edit.providers'),
-            defaultMessage: 'Edit Provider',
+            id: getTrad("PopUpForm.header.edit.providers"),
+            defaultMessage: "Edit Provider",
           }),
           upperFirst(providerToEditName),
         ]}
@@ -268,6 +291,5 @@ export const ProvidersPage = ({pluginName = "", secondStep = false}) => {
     </Layout>
   );
 };
-
 
 export default ProvidersPage;
