@@ -6,7 +6,6 @@ module.exports = ({ strapi }) => ({
         .findOne({
           where: { id: user },
         });
-      console.log(_user, user);
       if (_user.provider !== "local") {
         return null;
       }
@@ -19,7 +18,7 @@ module.exports = ({ strapi }) => ({
   },
   async connectUserAuthProvider({ user, provider, providersProfile = {} }) {
     if (provider === "local") {
-      console.log({ providersProfile });
+      console.log(providersProfile);
       return await strapi.entityService.update(
         "plugin::users-permissions.user",
         user,
@@ -31,6 +30,28 @@ module.exports = ({ strapi }) => ({
       return await strapi.db
         .query("plugin::auth-ext.auth-provider")
         .create({ data: { user, provider, ...providersProfile } });
+    }
+  },
+  async disconnectProvider({ user, provider }) {
+    const providersProfile = await this.findUserAuthProvider({
+      user,
+      provider,
+    });
+    if (!providersProfile) {
+      return null;
+    }
+    if (provider === "local") {
+      return await strapi.entityService.update(
+        "plugin::users-permissions.user",
+        user,
+        {
+          data: { provider: null },
+        }
+      );
+    } else {
+      return await strapi.db
+        .query("plugin::auth-ext.auth-provider")
+        .delete({ where: { id: providersProfile.id } });
     }
   },
 });

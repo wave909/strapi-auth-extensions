@@ -1,7 +1,6 @@
 const _ = require("lodash");
 module.exports = ({ strapi }) => ({
   async authStep(ctx) {
-    console.log("AUTH_STEP");
     try {
       const { provider, step } = ctx.params;
       ctx.query.providerArgs = ctx.request.body.providerArgs || {};
@@ -53,14 +52,13 @@ module.exports = ({ strapi }) => ({
         user = await strapi.db
           .query("plugin::users-permissions.user")
           .findOne({ where: { id: auth_user } });
-        console.log({ user });
         if (!user) {
           return ctx.notFound();
         }
         const userAuthProvider = await strapi
           .service("plugin::auth-ext.auth-provider")
           .findUserAuthProvider({ user: auth_user, provider });
-        console.log({ userAuthProvider });
+        console.log({ userAuthProvider, providersProfile });
 
         if (userAuthProvider) {
           if (
@@ -86,6 +84,58 @@ module.exports = ({ strapi }) => ({
       console.log(e);
       return ctx.badRequest(e);
     }
+  },
+  async resetProvider(ctx) {
+    const { provider } = ctx.params;
+    const { token } = ctx.request.body;
+    ctx.query.providerArgs = ctx.request.body.providerArgs || {};
+    await checkProviderEnabled({ strapi, provider, step: 1 });
+
+    const { auth_user } = token
+      ? await strapi.service("plugin::users-permissions.jwt").verify(token)
+      : {};
+    if (!auth_user) {
+      return ctx.badRequest("InvalidToken");
+    }
+    let user = await strapi.db
+      .query("plugin::users-permissions.user")
+      .findOne({ where: { id: auth_user } });
+    if (!user) {
+      return ctx.notFound();
+    }
+    await strapi
+      .service("plugin::auth-ext.auth-provider")
+      .disconnectProvider({ user: auth_user, provider });
+
+    let providersProfile = await strapi
+      .service("plugin::auth-ext.providers-profile")
+      .getProvidersProfile({ provider, query: ctx.query });
+    if (provider === "local" && !providersProfile) {
+      providersProfile = strapi
+        .service("plugin::auth-ext.transforms")
+        .transformLocalAuthParams(ctx.query.providerArgs);
+      if (!providersProfile.email) {
+        providersProfile.email =
+          providersProfile.username + "disabled@wave909.com";
+      }
+      if (!providersProfile.username) {
+        providersProfile.username = providersProfile.email;
+      }
+    }
+    await strapi
+      .service("plugin::auth-ext.auth-provider")
+      .connectUserAuthProvider({
+        user: auth_user,
+        provider,
+        providersProfile,
+      });
+    return await strapi
+      .service("plugin::auth-ext.transforms")
+      .formatAuthStepOutput({
+        step: (user.auth_steps_number || 1) - 1,
+        user,
+        query: ctx.query,
+      });
   },
 });
 const checkProviderEnabled = async ({ strapi, provider, step }) => {

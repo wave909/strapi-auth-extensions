@@ -18,10 +18,18 @@ module.exports = ({ strapi }) => ({
         const params = strapi
           .service("plugin::auth-ext.transforms")
           .transformLocalAuthParams(query.providerArgs);
+        if ((!params.username && !params.email) || !params.password) {
+          throw new Error("Invalid credentials");
+        }
+        const queryParams = {
+          ...params,
+          provider: "local",
+        };
+        delete queryParams.password;
         const user = await strapi.db
           .query("plugin::users-permissions.user")
-          .findOne({ where: params });
-        if (!user) {
+          .findOne({ where: queryParams });
+        if (!user || user.provider !== "local") {
           return null;
         }
         if (
@@ -42,7 +50,6 @@ module.exports = ({ strapi }) => ({
         const validPassword = await strapi
           .service("plugin::users-permissions.user")
           .validatePassword(params.password, user.password);
-        console.log(user, params);
 
         if (!validPassword) {
           throw new Error("Invalid identifier or password");

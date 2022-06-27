@@ -84,6 +84,19 @@ module.exports = {
           },
         },
       },
+      {
+        method: "POST",
+        path: "/auth/:provider/reset",
+        handler: "authExt.resetProvider",
+        config: {
+          policies: [],
+          description: "Request an SMS for the phone authentication",
+          tag: {
+            plugin: "auth-ext",
+            name: "User",
+          },
+        },
+      },
     ],
     type: "content-api",
   },
