@@ -10,7 +10,10 @@ module.exports = ({ strapi }) => ({
       name: "auth-ext",
       key: "providers",
     });
-    const allStepsConfigs = (await pluginStore.get()) || [null];
+    let allStepsConfigs = (await pluginStore.get()) || [null];
+    if (!allStepsConfigs || !Array.isArray(allStepsConfigs)) {
+      allStepsConfigs = [null];
+    }
     allStepsConfigs.push(null);
     await pluginStore.set({
       value: allStepsConfigs,
