@@ -107,19 +107,30 @@ module.exports = ({ strapi }) => ({
       .service("plugin::auth-ext.auth-provider")
       .disconnectProvider({ user: auth_user, provider });
 
-    let providersProfile = await strapi
-      .service("plugin::auth-ext.providers-profile")
-      .getProvidersProfile({ provider, query: ctx.query });
-    if (provider === "local" && !providersProfile) {
-      providersProfile = strapi
-        .service("plugin::auth-ext.transforms")
-        .transformLocalAuthParams(ctx.query.providerArgs);
-      if (!providersProfile.email) {
-        providersProfile.email =
-          providersProfile.username + "disabled@wave909.com";
-      }
-      if (!providersProfile.username) {
-        providersProfile.username = providersProfile.email;
+    let providersProfile;
+    try {
+      providersProfile = await strapi
+        .service("plugin::auth-ext.providers-profile")
+        .getProvidersProfile({ provider, query: ctx.query });
+    } catch (e) {
+      console.log(e);
+    }
+    if (!providersProfile) {
+      if (provider === "local") {
+        providersProfile = strapi
+          .service("plugin::auth-ext.transforms")
+          .transformLocalAuthParams(ctx.query.providerArgs);
+        console.log({ providersProfile });
+        if (!providersProfile.email) {
+          providersProfile.email =
+            providersProfile.username + "disabled@wave909.com";
+        }
+        if (!providersProfile.username) {
+          providersProfile.username = providersProfile.email;
+        }
+      } else {
+        console.log("BAD REQUEST");
+        return ctx.badRequest("Invalid providers creadentials");
       }
     }
     await strapi
