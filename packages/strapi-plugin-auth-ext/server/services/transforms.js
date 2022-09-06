@@ -10,7 +10,7 @@ module.exports = ({ strapi }) => ({
         user: await strapi.entityService.findOne(
           "plugin::users-permissions.user",
           user.id,
-          { populate: query.populate }
+          { populate: query.populate || [] }
         ),
         token: await strapi
           .service("plugin::users-permissions.jwt")

@@ -5,7 +5,7 @@ module.exports = ({ strapi }) => {
     "users-permissions"
   ].contentTypes.user.attributes.auth_steps_number = {
     type: "integer",
-    default: 2,
+    default: process.env.AUTH_EXT_DEFAULT_STEPS || 2,
     min: 1,
     configurable: false,
   };
