@@ -1,6 +1,6 @@
 {
   "name": "strapi-plugin-phone-auth",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "This is the description of the plugin.",
   "strapi": {
     "name": "phone-auth",

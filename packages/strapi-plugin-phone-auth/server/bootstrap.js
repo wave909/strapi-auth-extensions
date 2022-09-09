@@ -5,6 +5,27 @@ const path = require("path");
 const fs = require("fs");
 
 module.exports = async ({ strapi }) => {
+  const i18nPath = path.join(process.cwd(), "data", "phone-templates.json");
+
+  let i18n;
+  if (fs.existsSync(i18nPath)) {
+    i18n = JSON.parse(await fs.promises.readFile(i18nPath, "utf-8"));
+  } else {
+    i18n = {
+      "auth-code": {
+        en: "Your code: <%= CODE %>",
+      },
+    };
+    await fs.promises.mkdir(path.dirname(i18nPath), { recursive: true });
+    await fs.promises.writeFile(
+      i18nPath,
+      JSON.stringify(i18n, undefined, 2),
+      "utf-8"
+    );
+  }
+
+  strapi.plugins["phone-auth"].templates = i18n;
+
   const grantConfigService = strapi.service("plugin::auth-ext.grant-config");
   const providersService = strapi.service("plugin::auth-ext.providers-profile");
   const getProvidersProfile = providersService.getProvidersProfile;
@@ -66,26 +87,5 @@ module.exports = async ({ strapi }) => {
       ...getGrantConfig(basURL),
       phone: { enabled: true },
     });
-
-    const i18nPath = path.join(process.cwd(), "data", "phone-templates.json");
-
-    let i18n;
-    if (fs.existsSync(i18nPath)) {
-      i18n = JSON.parse(await fs.promises.readFile(i18nPath, "utf-8"));
-    } else {
-      i18n = {
-        "auth-code": {
-          en: "Your code: <%= CODE %>",
-        },
-      };
-      await fs.promises.mkdir(path.dirname(i18nPath), { recursive: true });
-      await fs.promises.writeFile(
-        i18nPath,
-        JSON.stringify(i18n, undefined, 2),
-        "utf-8"
-      );
-    }
-
-    strapi.plugins["phone-auth"].templates = i18n;
   };
 };
