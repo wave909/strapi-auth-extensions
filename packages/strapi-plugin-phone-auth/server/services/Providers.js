@@ -26,7 +26,8 @@ module.exports = ({ strapi }) => ({
               });
             }
           } else {
-            const { phone, token, code } = providerArgs || {};
+            const { token, code } = providerArgs || {};
+            const phone = providerArgs.phone && providerArgs.phone.replace(/[^+\d]/g,'');
 
             let requestToken = false;
             try {

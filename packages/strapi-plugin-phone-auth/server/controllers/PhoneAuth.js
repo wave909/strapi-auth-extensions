@@ -14,8 +14,8 @@ module.exports = ({strapi}) => ({
   // fixme: Add rate limiting
 
   async codeRequest(ctx, next) {
-    const {phone, locale} = ctx.request.body;
-
+    const {locale} = ctx.request.body;
+    const phone = ctx.request.body.phone && ctx.request.body.phone.replace(/[^+\d]/g,'');
     //TODO :use phone number validation?
     if (phone && phone.length > 15) {
       return ctx.badRequest(
@@ -51,7 +51,8 @@ module.exports = ({strapi}) => ({
   },
 
   async codeConfirm(ctx) {
-    const {phone, token, code} = ctx.request.body;
+    const {token, code} = ctx.request.body;
+    const phone = ctx.request.body.phone && ctx.request.body.phone.replace(/[^+\d]/g,'');
     let [error, response] = [null, null];
     await strapi.plugins["phone-auth"].services.providers.getProfile(
       "phone",
