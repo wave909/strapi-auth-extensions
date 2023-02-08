@@ -1,7 +1,11 @@
 const urljoin = require("url-join");
 const _ = require("lodash");
+const purest = require('purest')
+
 module.exports = ({ strapi }) => ({
   async getProvidersProfile({ provider, access_token, query }) {
+    access_token = access_token ?? query.providerArgs?.access_token
+
     const apiPrefix = strapi.config.get("api.rest.prefix");
     const baseURL = urljoin(strapi.config.server.url, apiPrefix, "auth");
     const providers = strapi
