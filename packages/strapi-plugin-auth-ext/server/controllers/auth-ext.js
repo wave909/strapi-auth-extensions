@@ -43,7 +43,7 @@ module.exports = ({ strapi }) => ({
         }
       } else {
         const { token } = ctx.request.body;
-        const { auth_user, ...rest } = token
+        const { auth_user, ...rest } = token //TODO get from token list of previously used providers and validate chain
           ? await strapi.service("plugin::users-permissions.jwt").verify(token)
           : {};
         if (!auth_user && step > 0) {
@@ -79,7 +79,7 @@ module.exports = ({ strapi }) => ({
       }
       return await strapi
         .service("plugin::auth-ext.transforms")
-        .formatAuthStepOutput({ step, user, query: ctx.query });
+        .formatAuthStepOutput({ step, user, query: ctx.query, provider });
     } catch (e) {
       console.log(e);
       return ctx.badRequest(e);

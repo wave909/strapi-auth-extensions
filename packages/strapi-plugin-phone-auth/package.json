@@ -1,6 +1,6 @@
 {
   "name": "strapi-plugin-phone-auth",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "This is the description of the plugin.",
   "strapi": {
     "name": "phone-auth",
@@ -9,7 +9,7 @@
     "description": "Plugin for authentication via a phone"
   },
   "dependencies": {
-    "strapi-plugin-auth-ext": "0.0.8",
+    "strapi-plugin-auth-ext": "0.0.9",
     "dotenv": "^10.0.0",
     "find-config": "^1.0.0",
     "isomorphic-fetch": "3.0.0",

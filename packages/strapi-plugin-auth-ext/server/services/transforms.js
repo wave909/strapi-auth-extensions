@@ -3,7 +3,7 @@ const emailRegExp =
 const { sanitize } = require("@strapi/utils");
 
 module.exports = ({ strapi }) => ({
-  async formatAuthStepOutput({ step, user, query }) {
+  async formatAuthStepOutput({ step, user, query, provider }) {
     console.log({ user, step });
     if (Number(step) + 1 >= (user.auth_steps_number || 1)) {
       const userEntity = await strapi.entityService.findOne(
@@ -19,10 +19,25 @@ module.exports = ({ strapi }) => ({
           .issue({ id: user.id }),
       };
     } else {
+      const availableProviders = await strapi.db
+        .query("plugin::auth-ext.auth-provider")
+        .findMany({
+          where: {
+            user: user.id,
+            provider: { $ne: provider },
+          },
+        });
+      if (provider !== "local") {
+        if (user.password) {
+          availableProviders.push({ provider: "local" });
+        }
+      }
+      console.log({ user, availableProviders });
       return {
+        availableProviders: availableProviders.map((it) => it.provider),
         token: await strapi
           .service("plugin::users-permissions.jwt")
-          .issue({ auth_user: user.id }),
+          .issue({ auth_user: user.id }), //TODO add providers chain into token
       };
     }
   },
