@@ -1,6 +1,6 @@
 {
   "name": "strapi-plugin-phone-auth",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "description": "This is the description of the plugin.",
   "strapi": {
     "name": "phone-auth",
@@ -32,7 +32,7 @@
     }
   ],
   "engines": {
-    "node": ">=10.16.0 <=14.x.x",
+    "node": ">=10.16.0 <=18.x.x",
     "npm": ">=6.0.0"
   },
   "license": "MIT",
