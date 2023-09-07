@@ -1,6 +1,6 @@
 {
   "name": "strapi-plugin-magic-link",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "This is the description of the plugin.",
   "strapi": {
     "name": "auth-link",
@@ -8,7 +8,7 @@
     "kind": "plugin"
   },
   "dependencies": {
-    "strapi-plugin-auth-ext": "0.0.10",
+    "strapi-plugin-auth-ext": "0.0.11",
     "@buffetjs/core": "3.3.8",
     "rand-token": "1.0.1"
   },

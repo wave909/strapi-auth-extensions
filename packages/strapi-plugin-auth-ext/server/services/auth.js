@@ -48,13 +48,19 @@ module.exports = ({ strapi }) => ({
     const advanced = await strapi
       .store({ type: "plugin", name: "users-permissions", key: "advanced" })
       .get();
+
     const defaultRole = await strapi
       .query("plugin::users-permissions.role")
-      .findOne({ where: { type: advanced.default_role } });
+      .findOne({
+        where: profileToRegister?.role
+          ? { name: profileToRegister?.role }
+          : { type: advanced.default_role },
+      });
 
     if (existingUser) {
       throw new Error("User already exists");
     }
+
     if (provider === "local") {
       return await strapi.db.query("plugin::users-permissions.user").create({
         data: {
